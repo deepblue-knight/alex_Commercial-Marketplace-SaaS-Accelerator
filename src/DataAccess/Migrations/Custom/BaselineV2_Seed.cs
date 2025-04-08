@@ -157,8 +157,7 @@ EXEC(N'
     Create Procedure [dbo].[spGetFormattedEmailBody]  
     (  
     @subscriptionId varchar(225),  
-    @processStatus varchar(225),
-    @sendToCustomer bit
+    @processStatus varchar(225)   
     )  
   
     /*  
@@ -185,15 +184,7 @@ EXEC(N'
     , @UserId int  
   
     Declare @applicationName Varchar(225) =(select [value] from [ApplicationConfiguration] where [Name]=''ApplicationName'')  
-    Declare @adminSiteURL Varchar(225) =(select [value] from [ApplicationConfiguration] where [Name]=''AdminSiteURL'') 
-    Declare @customerSiteURL Varchar(225) =(select [value] from [ApplicationConfiguration] where [Name]=''CustomerSiteURL'') 
     Declare @welcomeText varchar(MAX)=''''  
-    Declare @viewDetailsLink Varchar(225) ='''' 
-		
-    IF (@sendToCustomer= 1)  
-		  set @viewDetailsLink= @customerSiteURL + ''/Home/Subscriptions'' 
-    ELSE
-		  set @viewDetailsLink= @adminSiteURL + ''/Home/SubscriptionDetails?subscriptionId='' + @subscriptionId
   
   
     IF EXISTS (SELECT 1 FROM SUBSCRIPTIONS WHERE AMPSubscriptionId=@subscriptionId)  
@@ -293,7 +284,7 @@ EXEC(N'
   
     IF (@processStatus =''failure'')  
      BEGIN  
-      set @welcomeText= ''A request for the subscription has been failed.''  
+      set @welcomeText= ''Your request for the subscription has been failed.''  
       set @html = (SELECT TemplateBody FROM EmailTemplate WHERE Status = ''Failed'')
      END  
   
@@ -305,17 +296,11 @@ EXEC(N'
        END  
      IF (@subscriptionStatus= ''Subscribed'')  
         BEGIN  
-          IF (@sendToCustomer= 1)  
-            set @welcomeText= ''Your request for the purchase has been approved.''  
-          ELSE
-            set @welcomeText= ''A request for purchase with the following details has been approved.'' 
+      set @welcomeText= ''Your request for the purchase has been approved.''  
        END  
      IF (@subscriptionStatus= ''Unsubscribed'')  
         BEGIN  
-          IF (@sendToCustomer= 1)  
-            set @welcomeText= ''Your subscription with the following details was deleted from Azure.''  
-          ELSE
-            set @welcomeText= ''A subscription with the following details was deleted from Azure.''  
+      set @welcomeText= ''A subscription with the following details was deleted from Azure.''  
        END   
          set @html = (SELECT TemplateBody FROM EmailTemplate WHERE Status = @subscriptionStatus)
     END  
@@ -323,7 +308,6 @@ EXEC(N'
      select  @html=REPLACE(@html,''${subscriptiondetails}'',@subscriptionContent)  
       ,@html=REPLACE(@html,''${welcometext}'',@welcomeText)  
       ,@html=REPLACE(@html,''${ApplicationName}'',@applicationName)  
-      ,@html=REPLACE(@html,''${viewDetailsLink}'',@viewDetailsLink)        
    
   
      select 1 AS ID,''Email'' AS [Name], @html as [Value]  
